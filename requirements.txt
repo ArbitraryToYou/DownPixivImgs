@@ -1,0 +1,4 @@
+lxml==4.5.2
+requests==2.23.0
+pypiwin32==223
+PyMySQL==0.10.1
