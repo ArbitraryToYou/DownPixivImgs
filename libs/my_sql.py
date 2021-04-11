@@ -11,13 +11,17 @@ class Mysql(object):
         except Exception as e:
             print(e)
             self._flag = False
+            input('Press any key to quit.')
             exit(1)
         if self._cur.execute('SELECT * FROM information_schema.SCHEMATA where SCHEMA_NAME="p_acg"'):
             self._cur.execute('USE p_acg')
         else:
-            print('ERROR1:目标数据库不存在!')
+            self._cur.execute('CREATE DATABASE p_acg')#存在的话就会报错
+            self._cur.execute('USE p_acg')
+            print('Tip:成功创建数据库"p_acg"!')
         if not self._cur.execute('SELECT * FROM information_schema.TABLES where TABLE_NAME="tb_imgs"'):
-            print('ERROR2:目标数据表不存在！')
+            self._cur.execute('CREATE TABLE tb_imgs(id BIGINT(7) NOT NULL AUTO_INCREMENT, title VARCHAR(150) NOT NULL, type VARCHAR(50) NOT NULL, date DATE NOT NULL, links VARCHAR(5000), names VARCHAR(5000), PRIMARY KEY (id))')
+            print('Tip:成功创建表tb_imgs!')
 
     def search(self, fact):
         self._cur.execute(fact)
@@ -32,12 +36,25 @@ class Mysql(object):
         names = self._cur.fetchall()
         return (titles, links, names)
 
+    def insert(self, title, type, date, bf_links, bf_names):
+        links = '|'.join(bf_links)
+        names = '|'.join(bf_names)
+        sql = "INSERT INTO tb_imgs (title, type, date, links, names) VALUES ('%s', '%s', str_to_date('%s', '%%Y-%%m-%%d'), '%s', '%s')" % (title, type, date, links, names)
+        self._cur.execute(sql)
+        self._conn.commit()
+
+    def isRepeat(self, title, date):
+        sql_title = 'SELECT * from tb_imgs where title = "%s" and date = "%s"' % (title, date)
+        return self._cur.execute(sql_title)
+
     def close(self):
         if self._flag:
             self._cur.close()
             self._conn.close()
             self._flag = False
-        print('与数据库主机%s连接已成功断开。' % global_config.items('mysql')[0][1])
+
+    def myRollback(self):
+        self._conn.rollback()
 
     def __del__(self):
         if self._flag:

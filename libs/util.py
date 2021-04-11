@@ -37,11 +37,8 @@ def myPrint(str, com, per):
     print(str + ' '*(getWinSize() - len(str)-4))
     print('\r[%s%s] %.2f%%\r' % ('='*com, ' '*(getWinSize()-12-com), per), end='')
 
-def download(title, links, names, downnum, failnum, delta=1, done=1):
-    if os.path.exists(title):
-        return
-    os.mkdir(title)
-    os.chdir(title)
+def download(title, links, names, delta=1, done=1):
+    downnum = failnum = 0
     imgs = links.split('|')
     img_names = names.split('|')#解析
     index = 0
@@ -55,9 +52,8 @@ def download(title, links, names, downnum, failnum, delta=1, done=1):
         except:
             name = img_names[index] + '.jpg'
         name = purifyName(name)
-        try:
-            html = openImg(img)
-        except:
+        html = openImg(img)
+        if str(type(html)) == '<class \'str\'>':
             strFail = '[Sorry: %s is die!]' % name
             myPrint(strFail, com, per)
             sleep(stop)
@@ -75,8 +71,6 @@ def download(title, links, names, downnum, failnum, delta=1, done=1):
         sleep(stop)
         downnum += 1
         index += 1
-    os.chdir('../')
-    os.system('cls')
     return downnum, failnum
 
 def readLastName():
@@ -96,6 +90,61 @@ def rmFile(path):
             fileName = path + '\\' + tmp
             os.remove(fileName)
         os.rmdir(path)
+
+def disrepeatName(titles, catch, index):
+    if catch in titles:
+        catch += str(index)
+    return catch
+
+def catchTitles(html_text, imgs):
+    titles = []
+    index = 1
+    for img in imgs:
+        start_img = html_text.find(img)
+        start_title = html_text.find('标题', start_img, start_img + 270)
+        if start_title != -1:
+            end_title = html_text.find(']', start_title, start_title + 40)
+            if end_title != -1:
+                tmp = disrepeatName(titles, html_text[start_title + 3 : end_title], index)
+                titles.append(tmp)
+            else:
+                titles.append('None'+str(index))
+        else:
+            start_title = html_text.find('<p', start_img, start_img + 155)
+            if start_title != -1:
+                end_title = html_text.find('</p>', start_title, start_title + 40)
+                if end_title != -1:
+                    tmp = disrepeatName(titles, html_text[start_title + 3 : end_title], index)
+                    titles.append(tmp)
+                else:
+                    titles.append('None'+str(index))
+            else:
+                titles.append('None'+str(index))
+        index += 1
+    return titles
+
+def handleDate(my_dates):#处理成年-月-日
+    dates = []
+    for date in my_dates:
+        tmp = re.sub(r'[年月]', '-', date)
+        tmp = re.sub(r'日', '', tmp)
+        dates.append(tmp)
+    return dates
+
+def handleType(my_type):
+    num = len(my_type) - 1
+    i = 0
+    while i < len(my_type):
+        if my_type[i] == ', ':
+            my_type[i-1] = my_type[i-1] + ', ' + my_type[i+1]
+            my_type.pop(i)
+            my_type.pop(i)
+            i -= 1
+            num -= 2
+        if i >= num:
+            break
+        i += 1
+    return my_type
 
 if __name__ == '__main__':
     pass

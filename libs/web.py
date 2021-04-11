@@ -61,5 +61,17 @@ def openImg(url):
     headers = {
         'User-Agent' : getRanUserAgent()
     }
-    response = rqget(url=url, headers=headers)
+    for i in range(0, 3):
+        try:
+            response = rqget(url=url, headers=headers)
+            break
+        except Exception as e:
+            response = str(e) + url
+            continue
     return response
+
+def getLastPage(html):#Bug:从最后几页开始,找不到该节点!
+    last_page_link = html.xpath('//div[@class="pagination"]/a[@class="last"]/@href')#last()
+    spl = str.split(last_page_link[0], '/')
+    last_page = int(spl[-2])
+    return last_page
